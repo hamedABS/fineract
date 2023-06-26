@@ -262,6 +262,19 @@ public class ClientsApiResource {
         return applyCommandOverClient(clientId, null, commandParam, apiRequestBodyAsJson);
     }
 
+    @Path("{clientId}/validate-mobile-number")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.PostClientsClientIdRequest.class)))
+    public String validateMobileNumber(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
+                           @QueryParam("command") @Parameter(description = "command") final String commandParam,
+                           @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        return applyCommandOverClient(clientId, null, commandParam, apiRequestBodyAsJson);
+    }
+
+
+
+
     @GET
     @Path("{clientId}/accounts")
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -481,6 +494,8 @@ public class ClientsApiResource {
         CommandWrapper commandRequest = null;
         if (CommandParameterUtil.is(commandParam, "activate")) {
             commandRequest = builder.activateClient(clientId).build();
+        }else if(CommandParameterUtil.is(commandParam, "validateMobileNumber")){
+            commandRequest = builder.validateMobileNumber(clientId).build();
         } else if (CommandParameterUtil.is(commandParam, "assignStaff")) {
             commandRequest = builder.assignClientStaff(clientId).build();
         } else if (CommandParameterUtil.is(commandParam, "unassignStaff")) {

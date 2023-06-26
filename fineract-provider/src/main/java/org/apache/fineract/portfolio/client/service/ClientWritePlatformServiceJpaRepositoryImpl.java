@@ -61,7 +61,7 @@ import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.portfolio.address.service.AddressWritePlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
-import org.apache.fineract.portfolio.client.data.ClientDataValidator;
+import org.apache.fineract.portfolio.client.data.*;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
@@ -91,9 +91,14 @@ import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundExc
 import org.apache.fineract.portfolio.savings.service.SavingsApplicationProcessWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 @AllArgsConstructor
 @Service
@@ -123,6 +128,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
     private final ExternalIdFactory externalIdFactory;
+    private final RestTemplate restTemplate;
 
     @Transactional
     @Override
@@ -737,6 +743,22 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }
+    }
+
+    @Override
+    public CommandProcessingResult validateClientMobileNumber(Long clientId, JsonCommand command) {
+        ResponseEntity<GWLoginResponseDTO> shahkarResponseDTOResponseEntity =
+                restTemplate.postForEntity("http://10.5.18.34:8087/gateway/login", GWLoginRequestDTO.class, GWLoginResponseDTO.class);
+
+        String jwtToken = shahkarResponseDTOResponseEntity.getBody().jwtToken();
+
+        //ToDO fetch Client info
+//        ShahkarRequestDTO requestDTO = new ShahkarRequestDTO()
+
+//        HttpEntity<ShahkarRequestDTO> httpEntity = new HttpEntity<>()
+
+//        restTemplate.exchange("http://10.5.18.34:8087/shahkar/inquiry/mobile", HttpMethod.POST, HttpREq,)
+        return null;
     }
 
     private CommandProcessingResult openSavingsAccount(final Client client, final DateTimeFormatter fmt) {

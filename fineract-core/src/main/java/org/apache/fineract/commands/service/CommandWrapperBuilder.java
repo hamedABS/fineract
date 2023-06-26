@@ -3638,4 +3638,13 @@ public class CommandWrapperBuilder {
         this.href = "/external-asset-owners/transfers/loans/" + loanId;
         return this;
     }
+
+    public CommandWrapperBuilder validateMobileNumber(Long clientId) {
+        this.actionName = "VALIDATEMOBILENUMBER";
+        this.entityName = "CLIENT";
+        this.entityId = clientId;
+        this.clientId = clientId;
+        this.href = "/clients/" + clientId + "?command=validate-mobile-number&template=true";
+        return this;
+    }
 }

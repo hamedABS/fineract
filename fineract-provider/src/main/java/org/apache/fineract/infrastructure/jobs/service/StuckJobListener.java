@@ -18,15 +18,8 @@
  */
 package org.apache.fineract.infrastructure.jobs.service;
 
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.businessdate.service.BusinessDateReadPlatformService;
-import org.apache.fineract.infrastructure.core.domain.ActionContext;
-import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
-import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.core.service.tenant.TenantDetailsService;
 import org.apache.fineract.infrastructure.event.external.service.JdbcTemplateFactory;
 import org.apache.fineract.infrastructure.jobs.domain.JobExecutionRepository;
@@ -35,7 +28,6 @@ import org.springframework.batch.core.configuration.JobRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -53,7 +45,7 @@ public class StuckJobListener implements ApplicationListener<ContextRefreshedEve
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        if (!jobRegistry.getJobNames().isEmpty()) {
+/*        if (!jobRegistry.getJobNames().isEmpty()) {
             List<FineractPlatformTenant> allTenants = tenantDetailsService.findAllTenants();
             allTenants.forEach(tenant -> {
                 NamedParameterJdbcTemplate namedParameterJdbcTemplate = jdbcTemplateFactory.createNamedParameterJdbcTemplate(tenant);
@@ -72,6 +64,6 @@ public class StuckJobListener implements ApplicationListener<ContextRefreshedEve
                     }
                 }
             });
-        }
+        }*/
     }
 }
