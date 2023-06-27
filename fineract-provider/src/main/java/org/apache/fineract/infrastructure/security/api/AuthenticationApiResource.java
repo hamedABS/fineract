@@ -69,7 +69,6 @@ public class AuthenticationApiResource {
     private boolean twoFactorEnabled;
 
     public static class AuthenticateRequest {
-
         public String username;
         public String password;
     }

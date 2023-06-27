@@ -869,6 +869,7 @@
             </column>
             <column defaultValueComputed="NULL" name="sub_status" type="INT"/>
             <column defaultValueComputed="NULL" name="activation_date" type="date"/>
+            <column defaultValueComputed="NULL" name="mobile_verified_date" type="date"/>
             <column defaultValueComputed="NULL" name="office_joining_date" type="date"/>
             <column name="office_id" type="BIGINT">
                 <constraints nullable="false"/>
@@ -898,6 +899,7 @@
             <column defaultValueComputed="NULL" name="submittedon_date" type="date"/>
             <column defaultValueComputed="NULL" name="submittedon_userid" type="BIGINT"/>
             <column defaultValueComputed="NULL" name="activatedon_userid" type="BIGINT"/>
+            <column defaultValueComputed="NULL" name="mobile_verifiedon_userid" type="BIGINT"/>
             <column defaultValueComputed="NULL" name="closedon_userid" type="BIGINT"/>
             <column defaultValueComputed="NULL" name="default_savings_product" type="BIGINT"/>
             <column defaultValueComputed="NULL" name="default_savings_account" type="BIGINT"/>

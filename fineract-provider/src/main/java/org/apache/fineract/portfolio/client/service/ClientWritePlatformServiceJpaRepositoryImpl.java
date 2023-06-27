@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,13 +19,6 @@
 package org.apache.fineract.portfolio.client.service;
 
 import com.google.gson.JsonElement;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import javax.persistence.PersistenceException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +43,7 @@ import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
+import org.apache.fineract.infrastructure.dataqueries.service.ReadWriteNonCoreDataService;
 import org.apache.fineract.infrastructure.event.business.domain.client.ClientActivateBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.client.ClientCreateBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.client.ClientRejectBusinessEvent;
@@ -61,7 +55,11 @@ import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.portfolio.address.service.AddressWritePlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
-import org.apache.fineract.portfolio.client.data.*;
+import org.apache.fineract.portfolio.client.data.ClientDataValidator;
+import org.apache.fineract.portfolio.client.data.GWLoginRequestDTO;
+import org.apache.fineract.portfolio.client.data.GWLoginResponseDTO;
+import org.apache.fineract.portfolio.client.data.ShahkarRequestDTO;
+import org.apache.fineract.portfolio.client.data.ShahkarResponseDTO;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
@@ -92,13 +90,23 @@ import org.apache.fineract.portfolio.savings.service.SavingsApplicationProcessWr
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+
+import javax.persistence.PersistenceException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @AllArgsConstructor
 @Service
@@ -129,6 +137,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
     private final ExternalIdFactory externalIdFactory;
     private final RestTemplate restTemplate;
+    private final ReadWriteNonCoreDataService readWriteNonCoreDataService;
+    private final JdbcTemplate jdbcTemplate;
+
 
     @Transactional
     @Override
@@ -747,18 +758,54 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
     @Override
     public CommandProcessingResult validateClientMobileNumber(Long clientId, JsonCommand command) {
-        ResponseEntity<GWLoginResponseDTO> shahkarResponseDTOResponseEntity =
-                restTemplate.postForEntity("http://10.5.18.34:8087/gateway/login", GWLoginRequestDTO.class, GWLoginResponseDTO.class);
 
-        String jwtToken = shahkarResponseDTOResponseEntity.getBody().jwtToken();
 
-        //ToDO fetch Client info
-//        ShahkarRequestDTO requestDTO = new ShahkarRequestDTO()
+        try {
+            GWLoginRequestDTO gwLoginInfo = new GWLoginRequestDTO("authenticate-platform", "authenticate-platform");
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.add("Content-Type", "application/json");
 
-//        HttpEntity<ShahkarRequestDTO> httpEntity = new HttpEntity<>()
+            HttpEntity<GWLoginRequestDTO> httpEntityForShahkar = new HttpEntity<>(gwLoginInfo, httpHeaders);
 
-//        restTemplate.exchange("http://10.5.18.34:8087/shahkar/inquiry/mobile", HttpMethod.POST, HttpREq,)
-        return null;
+
+            ResponseEntity<GWLoginResponseDTO> gwResponseDTO =
+                    restTemplate.exchange("http://10.5.18.34:8087/gateway/login", HttpMethod.POST, httpEntityForShahkar, GWLoginResponseDTO.class);
+            String jwtToken = gwResponseDTO.getBody().jwtToken();
+
+
+            Client client = clientRepository.findOneWithNotFoundDetection(clientId);
+            final String sql = "select national_id from nationality where client_id=? ";
+            final SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, new Object[]{clientId});
+
+
+            httpHeaders.add("Authorization", "Bearer ".concat(jwtToken));
+
+            String nationalID;
+            if (rowSet.next()) {
+                nationalID = rowSet.getString("national_id");
+                ShahkarRequestDTO requestDTO = new ShahkarRequestDTO(nationalID, 0, client.getMobileNo());
+                HttpEntity<ShahkarRequestDTO> httpEntity = new HttpEntity<>(requestDTO, httpHeaders);
+                ResponseEntity<ShahkarResponseDTO> exchange = restTemplate.exchange("http://10.5.18.34:8087/shahkar/inquiry/mobile", HttpMethod.POST, httpEntity, ShahkarResponseDTO.class);
+                boolean mobileNumberIsValid = exchange.getStatusCode().is2xxSuccessful();
+                final AppUser currentUser = this.context.authenticatedUser();
+                final LocalDate validationDate = command.localDateValueOfParameterNamed("validationDate");
+                final Locale locale = command.extractLocale();
+                final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
+                client.verifyMobileNumber(currentUser, fmt, validationDate,mobileNumberIsValid);
+                clientRepository.saveAndFlush(client);
+                return new CommandProcessingResultBuilder() //
+                        .withCommandId(command.commandId()) //
+                        .withOfficeId(client.officeId()) //
+                        .withEntityExternalId(client.getExternalId()) //
+                        .withClientId(clientId) //
+                        .withEntityId(clientId) //
+                        .build();
+            }
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
+        return CommandProcessingResult.empty();
     }
 
     private CommandProcessingResult openSavingsAccount(final Client client, final DateTimeFormatter fmt) {

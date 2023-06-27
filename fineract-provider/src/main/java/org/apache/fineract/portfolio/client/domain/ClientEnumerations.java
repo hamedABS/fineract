@@ -63,6 +63,16 @@ public final class ClientEnumerations {
                 optionData = new EnumOptionData(ClientStatus.TRANSFER_ON_HOLD.getValue().longValue(),
                         ClientStatus.TRANSFER_ON_HOLD.getCode(), "Transfer on hold");
             break;
+
+            case MOBILE_VERIFIED:
+                optionData = new EnumOptionData(ClientStatus.MOBILE_VERIFIED.getValue().longValue(),
+                        ClientStatus.MOBILE_VERIFIED.getCode(), "Mobile verified");
+                break;
+
+            case MOBILE_REJECTED:
+                optionData = new EnumOptionData(ClientStatus.MOBILE_REJECTED.getValue().longValue(),
+                        ClientStatus.MOBILE_REJECTED.getCode(), "Mobile rejected");
+                break;
         }
 
         return optionData;

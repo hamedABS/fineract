@@ -408,6 +408,19 @@ final class ClientsApiResourceSwagger {
         public String locale;
     }
 
+    @Schema(description = "PostClientsClientMobileRequest")
+    public static final class PostClientsClientMobileRequest {
+
+        private PostClientsClientMobileRequest() {}
+
+        @Schema(example = "03 August 2021")
+        public String validationDate;
+        @Schema(example = "dd MMM yyyy")
+        public String dateFormat;
+        @Schema(example = "en")
+        public String locale;
+    }
+
     @Schema(description = "PostClientsClientIdResponse")
     public static final class PostClientsClientIdResponse {
 

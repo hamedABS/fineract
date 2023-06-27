@@ -65,4 +65,7 @@ public final class DatatableData implements Serializable {
         return registeredTableName;
     }
 
+    public List<ResultsetColumnHeaderData> getColumnHeaderData() {
+        return columnHeaderData;
+    }
 }

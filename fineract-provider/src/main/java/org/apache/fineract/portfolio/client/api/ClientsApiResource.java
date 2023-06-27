@@ -262,10 +262,11 @@ public class ClientsApiResource {
         return applyCommandOverClient(clientId, null, commandParam, apiRequestBodyAsJson);
     }
 
+    @POST
     @Path("{clientId}/validate-mobile-number")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.PostClientsClientIdRequest.class)))
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.PostClientsClientMobileRequest.class)))
     public String validateMobileNumber(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
                            @QueryParam("command") @Parameter(description = "command") final String commandParam,
                            @Parameter(hidden = true) final String apiRequestBodyAsJson) {

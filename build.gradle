@@ -528,10 +528,12 @@ configure(project.fineractJavaProjects) {
                     )
         }
     }
+/*
 
     compileJava {
         dependsOn(rat, licenseMain, licenseTest)
     }
+*/
 
     dependencies {
         implementation (

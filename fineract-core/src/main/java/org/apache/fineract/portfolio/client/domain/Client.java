@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,23 +18,6 @@
  */
 package org.apache.fineract.portfolio.client.domain;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -53,11 +36,30 @@ import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.useradministration.domain.AppUser;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+import javax.persistence.Column;
+import javax.persistence.ManyToOne;
+import javax.persistence.ManyToMany;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
+import javax.persistence.FetchType;
+import javax.persistence.JoinTable;
+import javax.persistence.Transient;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Entity
 @Getter
 @Setter
-@Table(name = "m_client", uniqueConstraints = { @UniqueConstraint(columnNames = { "account_no" }, name = "account_no_UNIQUE"), //
-        @UniqueConstraint(columnNames = { "mobile_no" }, name = "mobile_no_UNIQUE") })
+@Table(name = "m_client", uniqueConstraints = {@UniqueConstraint(columnNames = {"account_no"}, name = "account_no_UNIQUE"), //
+        @UniqueConstraint(columnNames = {"mobile_no"}, name = "mobile_no_UNIQUE")})
 public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "account_no", length = 20, unique = true, nullable = false)
@@ -87,6 +89,9 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "activation_date")
     private LocalDate activationDate;
+
+    @Column(name = "mobile_validity_check_date")
+    private LocalDate mobileValidityCheckDate;
 
     @Column(name = "office_joining_date")
     private LocalDate officeJoiningDate;
@@ -193,6 +198,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @JoinColumn(name = "activatedon_userid")
     private AppUser activatedBy;
 
+    @ManyToOne(optional = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "mobile_validity_check_by_userid")
+    private AppUser mobileValidityCheckBy;
+
     @Column(name = "default_savings_product")
     private Long savingsProductId;
 
@@ -221,24 +230,25 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     private LocalDate proposedTransferDate;
 
     public static Client instance(final AppUser currentUser, final ClientStatus status, final Office office, final Group clientParentGroup,
-            final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
-            final LocalDate activationDate, final LocalDate officeJoiningDate, final ExternalId externalId, final String mobileNo,
-            final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
-            final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff) {
+                                  final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
+                                  final LocalDate activationDate, final LocalDate officeJoiningDate, final ExternalId externalId, final String mobileNo,
+                                  final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
+                                  final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
+                                  final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff) {
         return new Client(currentUser, status, office, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
                 savingsAccountId, dateOfBirth, gender, clientType, clientClassification, legalForm, isStaff);
     }
 
-    protected Client() {}
+    protected Client() {
+    }
 
     private Client(final AppUser currentUser, final ClientStatus status, final Office office, final Group clientParentGroup,
-            final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
-            final LocalDate activationDate, final LocalDate officeJoiningDate, final ExternalId externalId, final String mobileNo,
-            final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
-            final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff) {
+                   final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
+                   final LocalDate activationDate, final LocalDate officeJoiningDate, final ExternalId externalId, final String mobileNo,
+                   final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
+                   final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
+                   final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -362,6 +372,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
 
+
         this.activationDate = activationLocalDate;
         this.activatedBy = currentUser;
         this.officeJoiningDate = this.activationDate;
@@ -372,7 +383,35 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.closureReason = null;
         this.closedBy = null;
 
+
         validate();
+    }
+
+    public void verifyMobileNumber(final AppUser currentUser, final DateTimeFormatter formatter, final LocalDate verifyingLocalDate, boolean mobileNumberIsValid) {
+        if (isVerifiedBefore()) {
+            final String defaultUserMessage = "Cannot verify client. Client is already verified.";
+            final ApiParameterError error = ApiParameterError.parameterError("error.msg.clients.already.verified", defaultUserMessage,
+                    ClientApiConstants.activationDateParamName, verifyingLocalDate.format(formatter));
+
+            final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+            dataValidationErrors.add(error);
+
+            throw new PlatformApiDataValidationException(dataValidationErrors);
+        }
+
+        this.mobileValidityCheckDate = verifyingLocalDate;
+        this.mobileValidityCheckBy = currentUser;
+        if (mobileNumberIsValid) {
+            this.status = ClientStatus.MOBILE_VERIFIED.getValue();
+        } else {
+            this.status = ClientStatus.MOBILE_REJECTED.getValue();
+        }
+
+        validate();
+    }
+
+    private boolean isVerifiedBefore() {
+        return ClientStatus.fromInt(this.status).isVerified();
     }
 
     public boolean isNotActive() {
