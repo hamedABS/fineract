@@ -29,6 +29,16 @@ apply plugin: 'org.springframework.boot'
 
 check.dependsOn('cucumber')
 
+repositories {
+    maven {
+        url "https://mifos.jfrog.io/artifactory/libs-snapshot-local"
+    }
+    maven {
+        url "https://repo.orl.eng.hitachivantara.com/artifactory/pnt-mvn/"
+    }
+    mavenCentral()
+}
+
 compileJava.doLast {
     def mainSS = sourceSets.main
     def source = mainSS.java.classesDirectory.get()
@@ -323,7 +333,6 @@ task migrateDatabase {
         }
     }
 }
-
 tasks.jibDockerBuild.dependsOn(bootJar)
 
 // Configuration for git properties gradle plugin
